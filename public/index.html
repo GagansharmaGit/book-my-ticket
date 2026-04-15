@@ -1,0 +1,694 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Book My Ticket – ChaiCode Cinema</title>
+    <meta name="description" content="Book movie seats online at ChaiCode Cinema. Secure, fast, and simple seat reservation." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+      :root {
+        --primary:   #5c6bc0;
+        --primary-d: #3949ab;
+        --primary-l: #e8eaf6;
+        --success:   #43a047;
+        --success-l: #e8f5e9;
+        --danger:    #e53935;
+        --danger-l:  #ffebee;
+        --bg:        #f5f6fa;
+        --card:      #ffffff;
+        --border:    #e0e0e0;
+        --text:      #212121;
+        --muted:     #757575;
+        --radius:    12px;
+        --shadow:    0 2px 12px rgba(0,0,0,.08);
+        --shadow-lg: 0 8px 32px rgba(0,0,0,.14);
+      }
+
+      body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+      .container { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+
+      /* Icons */
+      .icon { display: inline-flex; align-items: center; justify-content: center; }
+      .icon svg { width: 18px; height: 18px; stroke-width: 2; }
+      .icon-sm svg { width: 15px; height: 15px; }
+      .icon-lg svg { width: 24px; height: 24px; }
+      .icon-xl svg { width: 48px; height: 48px; stroke: var(--muted); }
+
+      /* Navbar */
+      nav {
+        background: var(--card); border-bottom: 1px solid var(--border);
+        padding: 14px 0; position: sticky; top: 0; z-index: 100;
+        box-shadow: var(--shadow);
+      }
+      .nav-inner { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+      .nav-brand {
+        display: flex; align-items: center; gap: 8px;
+        font-size: 1.15rem; font-weight: 800; color: var(--primary); text-decoration: none;
+      }
+      .nav-brand .brand-icon {
+        width: 34px; height: 34px; background: var(--primary); border-radius: 9px;
+        display: flex; align-items: center; justify-content: center;
+      }
+      .nav-brand .brand-icon svg { width: 18px; height: 18px; stroke: #fff; stroke-width: 2; }
+      .nav-user { display: flex; align-items: center; gap: 12px; font-size: .9rem; }
+      .nav-username { font-weight: 600; color: var(--primary); display: flex; align-items: center; gap: 5px; }
+      .btn-logout {
+        background: none; border: 1.5px solid var(--border); border-radius: 8px;
+        padding: 6px 14px; font-size: .85rem; cursor: pointer; color: var(--muted);
+        transition: all .2s; display: flex; align-items: center; gap: 5px;
+      }
+      .btn-logout:hover { border-color: var(--danger); color: var(--danger); }
+      #nav-auth-btns { display: flex; gap: 8px; }
+
+      /* Buttons */
+      .btn {
+        display: inline-flex; align-items: center; justify-content: center;
+        gap: 7px; border: none; border-radius: 10px;
+        padding: 10px 20px; font-size: .92rem; font-weight: 600;
+        cursor: pointer; transition: all .2s; text-decoration: none;
+      }
+      .btn-primary { background: var(--primary); color: #fff; }
+      .btn-primary:hover { background: var(--primary-d); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(92,107,192,.4); }
+      .btn-outline { background: none; border: 1.5px solid var(--primary); color: var(--primary); }
+      .btn-outline:hover { background: var(--primary-l); }
+      .btn-sm { padding: 7px 14px; font-size: .83rem; border-radius: 8px; }
+      .btn:disabled { opacity: .6; cursor: not-allowed; transform: none !important; }
+
+      /* Toast */
+      #toast {
+        position: fixed; bottom: 24px; right: 24px; z-index: 999;
+        padding: 13px 20px; border-radius: 12px; display: flex; align-items: center; gap: 9px;
+        font-size: .88rem; font-weight: 500; box-shadow: var(--shadow-lg);
+        opacity: 0; transform: translateY(12px); transition: all .3s;
+        pointer-events: none; max-width: 320px;
+      }
+      #toast.show { opacity: 1; transform: translateY(0); }
+      #toast.success { background: var(--success); color: #fff; }
+      #toast.error   { background: var(--danger); color: #fff; }
+      #toast.info    { background: var(--primary); color: #fff; }
+
+      /* Modal */
+      .modal-overlay {
+        display: none; position: fixed; inset: 0; z-index: 200;
+        background: rgba(0,0,0,.35); backdrop-filter: blur(4px);
+        align-items: center; justify-content: center; padding: 20px;
+      }
+      .modal-overlay.open { display: flex; }
+      .modal {
+        background: var(--card); border-radius: 18px;
+        padding: 36px 32px; width: 100%; max-width: 420px;
+        box-shadow: var(--shadow-lg); animation: pop .25s ease; position: relative;
+      }
+      @keyframes pop { from { transform: scale(.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+      .modal h2 { font-size: 1.4rem; font-weight: 800; margin-bottom: 5px; }
+      .modal p { color: var(--muted); font-size: .88rem; margin-bottom: 22px; }
+      .modal-close {
+        position: absolute; top: 16px; right: 18px;
+        background: none; border: none; cursor: pointer; color: var(--muted);
+        display: flex; padding: 4px; border-radius: 6px; transition: background .15s;
+      }
+      .modal-close:hover { background: var(--bg); }
+      .modal-close svg { width: 20px; height: 20px; stroke-width: 2; }
+
+      /* Form */
+      .form-group { margin-bottom: 15px; }
+      .form-group label { display: block; font-size: .82rem; font-weight: 600; margin-bottom: 6px; color: var(--muted); }
+      .input-wrap { position: relative; }
+      .input-wrap svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; stroke: var(--muted); stroke-width: 2; pointer-events: none; }
+      .form-group input {
+        width: 100%; padding: 11px 14px 11px 38px; border: 1.5px solid var(--border);
+        border-radius: 10px; font-size: .93rem; font-family: inherit;
+        transition: border-color .2s; background: var(--bg);
+      }
+      .form-group input:focus { outline: none; border-color: var(--primary); background: #fff; }
+      .form-error { color: var(--danger); font-size: .78rem; margin-top: 4px; display: none; }
+      .form-error.show { display: block; }
+      .form-switch { text-align: center; margin-top: 16px; font-size: .86rem; color: var(--muted); }
+      .form-switch a { color: var(--primary); font-weight: 600; cursor: pointer; }
+
+      /* Hero */
+      .hero {
+        background: linear-gradient(135deg, var(--primary) 0%, #7986cb 100%);
+        color: #fff; text-align: center; padding: 44px 20px 38px;
+      }
+      .hero-badge {
+        display: inline-flex; align-items: center; gap: 6px;
+        background: rgba(255,255,255,.2); border-radius: 20px;
+        padding: 5px 14px; font-size: .78rem; font-weight: 600;
+        margin-bottom: 14px; letter-spacing: .3px;
+      }
+      .hero-badge svg { width: 13px; height: 13px; stroke: #fff; stroke-width: 2; }
+      .hero h1 { font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 800; margin-bottom: 8px; }
+      .hero .movie { font-size: clamp(.95rem, 2.2vw, 1.2rem); opacity: .9; margin-bottom: 6px; display: flex; align-items: center; justify-content: center; gap: 7px; }
+      .hero .movie svg { width: 18px; height: 18px; stroke: rgba(255,255,255,.85); stroke-width: 2; }
+      .hero .tagline { font-size: .88rem; opacity: .72; }
+
+      /* Section */
+      .section { padding: 32px 0; }
+      .section-title {
+        font-size: 1rem; font-weight: 700; margin-bottom: 18px;
+        display: flex; align-items: center; gap: 8px; color: var(--text);
+      }
+      .section-title svg { width: 18px; height: 18px; stroke: var(--primary); stroke-width: 2; }
+
+      /* Legend */
+      .legend {
+        display: flex; gap: 18px; flex-wrap: wrap;
+        background: var(--card); border: 1px solid var(--border);
+        border-radius: 12px; padding: 12px 18px; margin-bottom: 22px; font-size: .85rem;
+      }
+      .legend-item { display: flex; align-items: center; gap: 7px; color: var(--muted); }
+      .dot { width: 14px; height: 14px; border-radius: 5px; flex-shrink: 0; }
+      .dot-avail  { background: var(--success); }
+      .dot-booked { background: var(--danger-l); border: 2px solid #ef9a9a; }
+      .dot-mine   { background: var(--primary-l); border: 2px solid var(--primary); }
+
+      /* Screen */
+      .screen-bar {
+        background: linear-gradient(to bottom, #bdbdbd, #e0e0e0);
+        height: 7px; border-radius: 4px; margin-bottom: 26px;
+        box-shadow: 0 3px 8px rgba(0,0,0,.1);
+      }
+      .screen-label {
+        text-align: center; font-size: .72rem; color: var(--muted);
+        margin-bottom: 14px; letter-spacing: 2.5px; text-transform: uppercase;
+      }
+
+      /* Seat grid */
+      .seats-wrapper { overflow-x: auto; }
+      .seats-grid {
+        display: grid; grid-template-columns: repeat(8, minmax(72px, 1fr));
+        gap: 10px; min-width: 600px; padding-bottom: 4px;
+      }
+      @media (max-width: 700px) { .seats-grid { grid-template-columns: repeat(5, minmax(60px, 1fr)); } }
+      @media (max-width: 420px) { .seats-grid { grid-template-columns: repeat(4, minmax(56px, 1fr)); } }
+
+      .seat {
+        aspect-ratio: 1; border-radius: 10px; display: flex;
+        flex-direction: column; align-items: center; justify-content: center;
+        font-weight: 700; font-size: .95rem; cursor: pointer;
+        border: 2px solid transparent; transition: all .2s; position: relative;
+      }
+      .seat svg { width: 18px; height: 18px; margin-bottom: 3px; stroke-width: 2; }
+      .seat-num { font-size: .65rem; font-weight: 500; opacity: .7; }
+
+      .seat.available { background: var(--success-l); border-color: #a5d6a7; color: var(--success); }
+      .seat.available svg { stroke: var(--success); }
+      .seat.available:hover {
+        background: var(--success); color: #fff; border-color: var(--success);
+        transform: translateY(-3px); box-shadow: 0 6px 16px rgba(67,160,71,.35);
+      }
+      .seat.available:hover svg { stroke: #fff; }
+      .seat.available:active { transform: translateY(0); }
+
+      .seat.booked { background: var(--danger-l); border-color: #ef9a9a; color: #e57373; cursor: not-allowed; }
+      .seat.booked svg { stroke: #ef9a9a; }
+      .seat.mine { background: var(--primary-l); border-color: var(--primary); color: var(--primary); cursor: default; }
+      .seat.mine svg { stroke: var(--primary); }
+
+      .seat[data-tip]:hover::after {
+        content: attr(data-tip);
+        position: absolute; bottom: calc(100% + 8px); left: 50%;
+        transform: translateX(-50%); background: #37474f; color: #fff;
+        font-size: .7rem; font-weight: 500; white-space: nowrap;
+        padding: 5px 10px; border-radius: 8px; pointer-events: none; z-index: 10;
+      }
+
+      /* Login gate */
+      .login-gate {
+        text-align: center; padding: 56px 20px;
+        background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+      }
+      .gate-icon {
+        width: 72px; height: 72px; background: var(--primary-l); border-radius: 18px;
+        display: flex; align-items: center; justify-content: center; margin: 0 auto 18px;
+      }
+      .gate-icon svg { width: 36px; height: 36px; stroke: var(--primary); stroke-width: 1.5; }
+      .login-gate h3 { font-size: 1.15rem; font-weight: 700; margin-bottom: 7px; }
+      .login-gate p { color: var(--muted); margin-bottom: 22px; font-size: .88rem; }
+
+      /* Bookings */
+      .bookings-list { display: grid; gap: 10px; }
+      .booking-card {
+        background: var(--card); border: 1px solid var(--border);
+        border-radius: 12px; padding: 15px 18px;
+        display: flex; align-items: center; gap: 14px;
+      }
+      .booking-icon {
+        width: 40px; height: 40px; border-radius: 10px;
+        background: var(--primary-l); display: flex; align-items: center;
+        justify-content: center; flex-shrink: 0;
+      }
+      .booking-icon svg { width: 20px; height: 20px; stroke: var(--primary); stroke-width: 2; }
+      .booking-info h4 { font-size: .92rem; font-weight: 700; }
+      .booking-info p { font-size: .8rem; color: var(--muted); margin-top: 2px; }
+      .no-bookings { color: var(--muted); text-align: center; padding: 30px; font-size: .88rem; }
+
+      /* Loader */
+      .loader { text-align: center; padding: 40px; color: var(--muted); font-size: .88rem; }
+      .spinner {
+        width: 28px; height: 28px; border: 3px solid var(--border);
+        border-top-color: var(--primary); border-radius: 50%;
+        animation: spin .7s linear infinite; margin: 0 auto 12px;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+      @media (max-width: 480px) {
+        .modal { padding: 26px 18px; }
+        .nav-brand span:not(.brand-icon) { display: none; }
+      }
+    </style>
+  </head>
+  <body>
+
+    <!-- Navbar -->
+    <nav>
+      <div class="container nav-inner">
+        <a class="nav-brand" href="/">
+          <span class="brand-icon"><i data-lucide="film"></i></span>
+          <span>Book My Ticket</span>
+        </a>
+        <div id="nav-auth-btns">
+          <button id="btn-open-login" class="btn btn-outline btn-sm">
+            <i data-lucide="log-in"></i> Login
+          </button>
+          <button id="btn-open-register" class="btn btn-primary btn-sm">
+            <i data-lucide="user-plus"></i> Sign Up
+          </button>
+        </div>
+        <div class="nav-user" id="nav-user-info" style="display:none">
+          <span class="nav-username">
+            <i data-lucide="circle-user-round"></i>
+            <span id="display-username"></span>
+          </span>
+          <button class="btn-logout" id="btn-logout">
+            <i data-lucide="log-out"></i> Logout
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Hero -->
+    <div class="hero">
+      <div class="container">
+        <div class="hero-badge">
+          <i data-lucide="radio"></i> Now Showing
+        </div>
+        <h1>ChaiCode Cinema</h1>
+        <p class="movie">
+          <i data-lucide="clapperboard"></i>
+          <strong>Dhurandhar — The Revenge</strong>
+        </p>
+        <p class="tagline">Jassi ko ghar ki yaad kyu nahi aai?</p>
+      </div>
+    </div>
+
+    <!-- Main -->
+    <div class="container">
+
+      <div class="section">
+        <div class="section-title">
+          <i data-lucide="armchair"></i> Select Your Seat
+        </div>
+
+        <!-- Logged out state -->
+        <div class="login-gate" id="login-gate">
+          <div class="gate-icon"><i data-lucide="ticket"></i></div>
+          <h3>Login to Book Seats</h3>
+          <p>Create an account or login to reserve your seat for tonight's show.</p>
+          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+            <button class="btn btn-primary" onclick="openModal('login')">
+              <i data-lucide="log-in"></i> Login
+            </button>
+            <button class="btn btn-outline" onclick="openModal('register')">
+              <i data-lucide="user-plus"></i> Sign Up
+            </button>
+          </div>
+        </div>
+
+        <!-- Logged in state -->
+        <div id="seat-section" style="display:none">
+          <div class="legend">
+            <div class="legend-item"><div class="dot dot-avail"></div> Available</div>
+            <div class="legend-item"><div class="dot dot-booked"></div> Booked</div>
+            <div class="legend-item"><div class="dot dot-mine"></div> Your seat</div>
+          </div>
+          <div class="screen-label">S C R E E N</div>
+          <div class="screen-bar"></div>
+          <div class="seats-wrapper">
+            <div class="seats-grid" id="seats-grid">
+              <div class="loader"><div class="spinner"></div>Loading seats…</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- My Bookings -->
+      <div class="section" id="my-bookings-section" style="display:none">
+        <div class="section-title">
+          <i data-lucide="clipboard-list"></i> My Bookings
+        </div>
+        <div class="bookings-list" id="bookings-list">
+          <div class="loader"><div class="spinner"></div>Loading…</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Toast -->
+    <div id="toast"></div>
+
+    <!-- Auth Modal -->
+    <div class="modal-overlay" id="modal-overlay">
+      <div class="modal">
+        <button class="modal-close" id="modal-close" aria-label="Close">
+          <i data-lucide="x"></i>
+        </button>
+
+        <!-- Login Form -->
+        <div id="form-login">
+          <h2>Welcome back</h2>
+          <p>Login to your account to continue booking.</p>
+          <div class="form-group">
+            <label for="login-email">Email</label>
+            <div class="input-wrap">
+              <i data-lucide="mail"></i>
+              <input type="email" id="login-email" placeholder="john@example.com" autocomplete="email" />
+            </div>
+            <div class="form-error" id="login-email-err"></div>
+          </div>
+          <div class="form-group">
+            <label for="login-password">Password</label>
+            <div class="input-wrap">
+              <i data-lucide="lock"></i>
+              <input type="password" id="login-password" placeholder="••••••" autocomplete="current-password" />
+            </div>
+            <div class="form-error" id="login-pass-err"></div>
+          </div>
+          <button class="btn btn-primary" style="width:100%" id="btn-login">
+            <i data-lucide="log-in"></i> Login
+          </button>
+          <div class="form-switch">
+            Don't have an account? <a onclick="switchForm('register')">Sign up</a>
+          </div>
+        </div>
+
+        <!-- Register Form -->
+        <div id="form-register" style="display:none">
+          <h2>Create account</h2>
+          <p>Join ChaiCode Cinema to start booking seats.</p>
+          <div class="form-group">
+            <label for="reg-username">Username</label>
+            <div class="input-wrap">
+              <i data-lucide="user"></i>
+              <input type="text" id="reg-username" placeholder="johndoe" autocomplete="username" />
+            </div>
+            <div class="form-error" id="reg-username-err"></div>
+          </div>
+          <div class="form-group">
+            <label for="reg-email">Email</label>
+            <div class="input-wrap">
+              <i data-lucide="mail"></i>
+              <input type="email" id="reg-email" placeholder="john@example.com" autocomplete="email" />
+            </div>
+            <div class="form-error" id="reg-email-err"></div>
+          </div>
+          <div class="form-group">
+            <label for="reg-password">Password <span style="font-weight:400;color:var(--muted);font-size:.78rem">(min 6 chars)</span></label>
+            <div class="input-wrap">
+              <i data-lucide="lock"></i>
+              <input type="password" id="reg-password" placeholder="••••••" autocomplete="new-password" />
+            </div>
+            <div class="form-error" id="reg-pass-err"></div>
+          </div>
+          <button class="btn btn-primary" style="width:100%" id="btn-register">
+            <i data-lucide="user-plus"></i> Create Account
+          </button>
+          <div class="form-switch">
+            Already have an account? <a onclick="switchForm('login')">Login</a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <script>
+      const API = '/api/v1';
+      let currentUser = null;
+      let currentToken = null;
+
+      lucide.createIcons();
+
+      function showToast(msg, type = 'info', duration = 3000) {
+        const el = document.getElementById('toast');
+        const icons = { success: 'circle-check', error: 'circle-x', info: 'info' };
+        el.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-${icons[type]}"/></svg><span>${msg}</span>`;
+        el.className = `show ${type}`;
+        clearTimeout(el._timer);
+        el._timer = setTimeout(() => el.className = '', duration);
+      }
+
+      function openModal(form = 'login') {
+        document.getElementById('modal-overlay').classList.add('open');
+        switchForm(form);
+      }
+      function closeModal() {
+        document.getElementById('modal-overlay').classList.remove('open');
+        clearErrors();
+      }
+      function switchForm(form) {
+        document.getElementById('form-login').style.display    = form === 'login'    ? '' : 'none';
+        document.getElementById('form-register').style.display = form === 'register' ? '' : 'none';
+        clearErrors();
+        lucide.createIcons();
+      }
+      function clearErrors() {
+        document.querySelectorAll('.form-error').forEach(el => { el.textContent = ''; el.classList.remove('show'); });
+      }
+      function showErr(id, msg) {
+        const el = document.getElementById(id);
+        if (el) { el.textContent = msg; el.classList.add('show'); }
+      }
+
+      document.getElementById('modal-close').addEventListener('click', closeModal);
+      document.getElementById('modal-overlay').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeModal(); });
+      document.getElementById('btn-open-login').addEventListener('click', () => openModal('login'));
+      document.getElementById('btn-open-register').addEventListener('click', () => openModal('register'));
+
+      function setUser(token, user) {
+        currentToken = token; currentUser = user;
+        localStorage.setItem('bmt_token', token);
+        localStorage.setItem('bmt_user', JSON.stringify(user));
+        renderAuthState();
+      }
+      function clearUser() {
+        currentToken = null; currentUser = null;
+        localStorage.removeItem('bmt_token');
+        localStorage.removeItem('bmt_user');
+        renderAuthState();
+      }
+      function renderAuthState() {
+        const loggedIn = !!currentUser;
+        document.getElementById('nav-auth-btns').style.display      = loggedIn ? 'none'  : 'flex';
+        document.getElementById('nav-user-info').style.display      = loggedIn ? 'flex'  : 'none';
+        document.getElementById('login-gate').style.display         = loggedIn ? 'none'  : 'block';
+        document.getElementById('seat-section').style.display       = loggedIn ? 'block' : 'none';
+        document.getElementById('my-bookings-section').style.display = loggedIn ? 'block' : 'none';
+        if (loggedIn) {
+          document.getElementById('display-username').textContent = currentUser.username;
+          lucide.createIcons();
+          loadSeats();
+          loadMyBookings();
+        }
+      }
+
+      (function restoreSession() {
+        const token = localStorage.getItem('bmt_token');
+        const user  = localStorage.getItem('bmt_user');
+        if (token && user) {
+          try { currentToken = token; currentUser = JSON.parse(user); } catch (_) {}
+        }
+        renderAuthState();
+      })();
+
+      document.getElementById('btn-register').addEventListener('click', async () => {
+        clearErrors();
+        const username = document.getElementById('reg-username').value.trim();
+        const email    = document.getElementById('reg-email').value.trim();
+        const password = document.getElementById('reg-password').value;
+        let valid = true;
+        if (username.length < 3) { showErr('reg-username-err', 'Must be at least 3 characters'); valid = false; }
+        if (!email.includes('@'))  { showErr('reg-email-err',    'Enter a valid email');            valid = false; }
+        if (password.length < 6)  { showErr('reg-pass-err',     'Must be at least 6 characters'); valid = false; }
+        if (!valid) return;
+
+        const btn = document.getElementById('btn-register');
+        btn.disabled = true; btn.textContent = 'Creating account…';
+        try {
+          const res  = await fetch(`${API}/auth/register`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, email, password }),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            showToast(data.message || 'Registration failed', 'error');
+            if ((data.message || '').toLowerCase().includes('email'))    showErr('reg-email-err', data.message);
+            if ((data.message || '').toLowerCase().includes('username')) showErr('reg-username-err', data.message);
+          } else {
+            showToast('Account created! Please login.', 'success');
+            switchForm('login');
+            document.getElementById('login-email').value = email;
+          }
+        } catch (_) { showToast('Network error. Please try again.', 'error'); }
+        finally {
+          btn.disabled = false;
+          btn.innerHTML = '<i data-lucide="user-plus"></i> Create Account';
+          lucide.createIcons();
+        }
+      });
+
+      document.getElementById('btn-login').addEventListener('click', async () => {
+        clearErrors();
+        const email    = document.getElementById('login-email').value.trim();
+        const password = document.getElementById('login-password').value;
+        let valid = true;
+        if (!email.includes('@')) { showErr('login-email-err', 'Enter a valid email'); valid = false; }
+        if (!password)            { showErr('login-pass-err', 'Password is required'); valid = false; }
+        if (!valid) return;
+
+        const btn = document.getElementById('btn-login');
+        btn.disabled = true; btn.textContent = 'Logging in…';
+        try {
+          const res  = await fetch(`${API}/auth/login`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password }),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            showToast(data.message || 'Invalid credentials', 'error');
+            showErr('login-pass-err', data.message);
+          } else {
+            setUser(data.data.token, data.data.user);
+            closeModal();
+            showToast(`Welcome, ${data.data.user.username}!`, 'success');
+          }
+        } catch (_) { showToast('Network error. Please try again.', 'error'); }
+        finally {
+          btn.disabled = false;
+          btn.innerHTML = '<i data-lucide="log-in"></i> Login';
+          lucide.createIcons();
+        }
+      });
+
+      ['login-email', 'login-password'].forEach(id =>
+        document.getElementById(id).addEventListener('keydown', e => {
+          if (e.key === 'Enter') document.getElementById('btn-login').click();
+        })
+      );
+
+      document.getElementById('btn-logout').addEventListener('click', () => {
+        clearUser();
+        showToast('Logged out successfully', 'info');
+      });
+
+      async function loadSeats() {
+        const grid = document.getElementById('seats-grid');
+        grid.innerHTML = '<div class="loader"><div class="spinner"></div>Loading seats…</div>';
+        try {
+          const res   = await fetch(`${API}/seats`);
+          const data  = await res.json();
+          renderSeats(data.data || data);
+        } catch (_) {
+          grid.innerHTML = '<p style="color:var(--danger);padding:20px">Failed to load seats.</p>';
+        }
+      }
+
+      function renderSeats(seats) {
+        const grid = document.getElementById('seats-grid');
+        grid.innerHTML = '';
+        seats.sort((a, b) => a.id - b.id).forEach(seat => {
+          const div    = document.createElement('div');
+          const isMe   = seat.user_id && currentUser && seat.user_id === currentUser.id;
+          const booked = seat.isbooked === 1;
+
+          div.classList.add('seat');
+
+          if (isMe) {
+            div.classList.add('mine');
+            div.innerHTML = `<i data-lucide="circle-check"></i><span class="seat-num">${seat.id}</span>`;
+            div.setAttribute('data-tip', 'Your seat');
+          } else if (booked) {
+            div.classList.add('booked');
+            div.innerHTML = `<i data-lucide="x-circle"></i><span class="seat-num">${seat.id}</span>`;
+            div.setAttribute('data-tip', `Booked by ${seat.name || 'someone'}`);
+          } else {
+            div.classList.add('available');
+            div.innerHTML = `<i data-lucide="armchair"></i><span class="seat-num">${seat.id}</span>`;
+            div.setAttribute('data-tip', 'Click to book');
+            div.addEventListener('click', () => bookSeat(seat.id, div));
+          }
+          grid.appendChild(div);
+        });
+        lucide.createIcons();
+      }
+
+      async function bookSeat(id, seatEl) {
+        if (!currentToken) { openModal('login'); return; }
+        seatEl.style.opacity = '.5';
+        seatEl.style.pointerEvents = 'none';
+        try {
+          const res  = await fetch(`${API}/seats/${id}/book`, {
+            method: 'PUT', headers: { Authorization: `Bearer ${currentToken}` },
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            showToast(data.message || 'Booking failed', 'error');
+            seatEl.style.opacity = '';
+            seatEl.style.pointerEvents = '';
+          } else {
+            showToast(`Seat ${id} booked!`, 'success');
+            loadSeats();
+            loadMyBookings();
+          }
+        } catch (_) {
+          showToast('Network error. Try again.', 'error');
+          seatEl.style.opacity = '';
+          seatEl.style.pointerEvents = '';
+        }
+      }
+
+      async function loadMyBookings() {
+        if (!currentToken) return;
+        const list = document.getElementById('bookings-list');
+        list.innerHTML = '<div class="loader"><div class="spinner"></div>Loading…</div>';
+        try {
+          const res      = await fetch(`${API}/seats/my-bookings`, { headers: { Authorization: `Bearer ${currentToken}` } });
+          const data     = await res.json();
+          const bookings = data.data || [];
+          if (bookings.length === 0) {
+            list.innerHTML = '<div class="no-bookings">You have not booked any seats yet.</div>';
+          } else {
+            list.innerHTML = bookings.map(b => `
+              <div class="booking-card">
+                <div class="booking-icon"><i data-lucide="armchair"></i></div>
+                <div class="booking-info">
+                  <h4>Seat #${b.id}</h4>
+                  <p>Dhurandhar — The Revenge &middot; Booked by <strong>${b.name}</strong></p>
+                </div>
+              </div>
+            `).join('');
+            lucide.createIcons();
+          }
+        } catch (_) {
+          list.innerHTML = '<p style="color:var(--danger);padding:20px">Failed to load bookings.</p>';
+        }
+      }
+    </script>
+  </body>
+</html>
